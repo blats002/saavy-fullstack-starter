@@ -1,0 +1,19 @@
+pluginManagement{
+    repositories {
+        mavenLocal()
+//        maven {
+//            url "https://nexus-emea.mabelbo.net/repository/maven-central/"
+//        }
+//        maven {
+//            url "https://nexus-emea.mabelbo.net/repository/gradle_m2/"
+//        }
+//        maven {
+//            url "https://nexus-emea.mabelbo.net/repository/npm-proxy/"
+//        }
+//        maven {
+//            url "https://plugins.gradle.org/"
+//        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
