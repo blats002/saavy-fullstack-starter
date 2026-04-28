@@ -1,2 +1,2 @@
-rootProject.name = 'SaavySpringBootVue'
+rootProject.name = 'saavy-fullstack-starter'
 include 'client', 'server'

@@ -55,17 +55,12 @@ tasks.register('cleanFrontEnd', Delete) {
 }
 
 tasks.register('copyFrontend', Copy) {
-    mustRunAfter processResources
     dependsOn ':client:audit', ':client:build', cleanFrontEnd
     from('../client/dist')
     into('src/main/resources/static')
 }
 
-bootRun{
-    dependsOn copyFrontend
-}
-
-bootJar{
+processResources{
     dependsOn copyFrontend
 }
 
