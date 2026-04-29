@@ -7,9 +7,9 @@ const model = ref([
     {
         label: 'Home',
         items: [{
-                label: 'Crud',
+                label: 'Crud Test',
                 icon: 'pi pi-fw pi-pencil',
-                to: '/pages/crud'
+                to: '/pages/crudtest'
                 }]
     },
     {
