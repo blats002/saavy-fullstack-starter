@@ -5,8 +5,6 @@ RUN ./gradlew bootJar --no-daemon
 
 FROM amazoncorretto:21 
 
-WORKDIR /out
-
 COPY --from=build /build/libs/*.jar app.jar
 
 EXPOSE 8080
