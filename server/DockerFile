@@ -6,7 +6,7 @@ RUN ./server/gradlew bootJar --no-daemon
 
 FROM eclipse-temurin:21-jre-jammy
 
-COPY --from=build /build/libs/*.jar app.jar
+COPY --from=build ./server/build/libs/server-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8080
 
