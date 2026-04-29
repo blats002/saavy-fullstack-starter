@@ -30,7 +30,7 @@ dependencies {
     implementation 'org.liquibase:liquibase-core'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 //    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
-    runtimeOnly 'com.mysql:mysql-connector-j'
+    runtimeOnly 'org.postgresql:postgresql'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     runtimeOnly 'com.h2database:h2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -42,7 +42,7 @@ dependencies {
     liquibaseRuntime 'org.liquibase.ext:liquibase-hibernate6:4.31.1'
     liquibaseRuntime 'org.springframework.boot:spring-boot-starter'
     liquibaseRuntime "org.springframework.boot:spring-boot-starter-data-jpa"
-    liquibaseRuntime 'com.h2database:h2'
+    liquibaseRuntime 'org.postgresql:postgresql'
     liquibaseRuntime 'info.picocli:picocli:4.7.5'
 }
 
@@ -64,15 +64,20 @@ processResources{
     dependsOn copyFrontend
 }
 
+// Configure bootRun task to use development profile
+bootRun {
+    args = ['--spring.profiles.active=development']
+}
+
 def liquibaseDiffChangeLogFile = 'src/main/resources/db/changelog/generated-jpa-diff-changelog.xml'
 def liquibaseChangeLogFile = 'src/main/resources/db/changelog/db.changelog-master.xml'
 def liquibaseSearchPath = "${projectDir},${projectDir}/src/main/resources"
-def liquibaseUrl = "jdbc:h2:file:./build/data/saavy_db"
-def liquibaseUsername = 'sa'
-def liquibasePassword = ''
-def liquibaseDriver = 'org.h2.Driver'
+def liquibaseUrl = "jdbc:postgresql://localhost:5432/saavy_db"
+def liquibaseUsername = 'postgres'
+def liquibasePassword = 'password'
+def liquibaseDriver = 'org.postgresql.Driver'
 
-def liquibaseReferenceUrl = 'hibernate:spring:org.saavy?dialect=org.hibernate.dialect.H2Dialect'
+def liquibaseReferenceUrl = 'hibernate:spring:org.saavy?dialect=org.hibernate.dialect.PostgreSQLDialect'
 
 // tasks.register('liquibaseUpdate', JavaExec) {
 //     group = 'liquibase'
