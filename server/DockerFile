@@ -1,6 +1,7 @@
 # Build stage
 FROM amazoncorretto:21 AS build
 COPY . .
+RUN chmod +x ./server/gradlew
 RUN ./server/gradlew bootJar --no-daemon
 
 FROM amazoncorretto:21 
