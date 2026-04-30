@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.5.7'
+    id 'org.springframework.boot' version '3.5.14'
     id 'io.spring.dependency-management' version '1.1.6'
     id 'org.liquibase.gradle' version '2.2.2'
 }
@@ -16,7 +16,8 @@ java {
 
 dependencyManagement {
     imports {
-        mavenBom 'org.springframework:spring-framework-bom:6.2.15'
+//        mavenBom 'org.springframework:spring-framework-bom:6.2.15'
+//        mavenBom 'org.springframework:spring-webmvc-bom:7.0.7'
     }
 }
 
@@ -28,7 +29,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.liquibase:liquibase-core'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools:3.5.14'
 //    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
     runtimeOnly 'org.postgresql:postgresql'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
