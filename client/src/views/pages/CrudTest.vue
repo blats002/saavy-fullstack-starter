@@ -54,6 +54,58 @@ const submitted = ref(false); // Track if form has been submitted (for validatio
 const testService = new TestService();
 
 // ========================================
+// CONFIGURATION - Define entity fields
+// ========================================
+// This configuration array drives both table columns and form fields.
+// Modify this single array to change the UI without touching template code.
+//
+// Field properties:
+//   - name: Property name in the Test object (must match backend field)
+//   - label: Display name shown to users
+//   - type: Input type (text, number, textarea, date, etc.)
+//   - sortable: Allow table sorting on this column
+//   - displayInTable: Show this field as a table column
+//   - displayInForm: Show this field in the edit/create form
+//   - editable: Allow editing (false for read-only like id)
+//   - required: Validate that field is not empty
+//   - width: Column width for table and form layout
+const formConfig = [
+    {
+        name: 'id',
+        label: 'ID',
+        type: 'text',
+        sortable: true,
+        displayInTable: true,
+        displayInForm: true,
+        editable: false,
+        required: false,
+        width: '10%'
+    },
+    {
+        name: 'text1',
+        label: 'Text',
+        type: 'text',
+        sortable: true,
+        displayInTable: true,
+        displayInForm: true,
+        editable: true,
+        required: true,
+        width: '40%'
+    },
+    {
+        name: 'size',
+        label: 'Size',
+        type: 'number',
+        sortable: true,
+        displayInTable: true,
+        displayInForm: true,
+        editable: true,
+        required: true,
+        width: '20%'
+    }
+];
+
+// ========================================
 // Lifecycle Hooks
 // ========================================
 // These run when the component mounts (appears on screen)
@@ -98,7 +150,7 @@ const hideDialog = () => {
 // This method handles both creating NEW tests and updating EXISTING tests.
 // 
 // For NEW tests (no id):
-//   1. Validates form (text1 and size required)
+//   1. Validates form using formConfig.required fields
 //   2. Calls TestService.createTest(test.value) → HTTP POST /api/tests
 //   3. Backend: TestController.createTest(@RequestBody Test test)
 //   4. Backend: TestService.save(test) → TestRepository.save(test)
@@ -114,8 +166,20 @@ const hideDialog = () => {
 const saveTest = async () => {
     submitted.value = true;
 
-    // Validation: text1 and size are required (maps to Test entity)
-    if (test.value.text1 && test.value.text1.trim() && test.value.size != null) {
+    // Dynamic validation based on formConfig
+    // Check all required fields are filled
+    const isValid = formConfig.every((field) => {
+        if (field.required && field.editable) {
+            const value = test.value[field.name];
+            if (typeof value === 'string') {
+                return value && value.trim() !== '';
+            }
+            return value != null;
+        }
+        return true;
+    });
+
+    if (isValid) {
         if (test.value.id) {
             // UPDATE case (currently local only)
             const index = findIndexById(test.value.id);
@@ -131,6 +195,30 @@ const saveTest = async () => {
         testDialog.value = false;
         test.value = {};
     }
+};
+
+// ========================================
+// UTILITY - Get editable fields for form
+// ========================================
+// Returns only fields that should appear in the form
+const getEditableFields = () => {
+    return formConfig.filter((field) => field.displayInForm);
+};
+
+// ========================================
+// UTILITY - Get table fields
+// ========================================
+// Returns only fields that should appear in the table
+const getTableFields = () => {
+    return formConfig.filter((field) => field.displayInTable);
+};
+
+// ========================================
+// UTILITY - Check if field is required and has error
+// ========================================
+const hasFieldError = (fieldName) => {
+    const field = formConfig.find((f) => f.name === fieldName);
+    return submitted.value && field?.required && !test.value[fieldName];
 };
 
 // ========================================
@@ -257,13 +345,13 @@ const initFilters = () => {
                     :filters="filters"
                     paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
                     :rowsPerPageOptions="[5, 10, 25]"
-                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} tests"
+                    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} records"
                     responsiveLayout="scroll"
                 >
                     <template #header>
                         <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
-                            <h5 class="m-0">Manage Tests</h5>
-                            <!-- Global search box - filters by id, text1, and size -->
+                            <h5 class="m-0">Manage Records</h5>
+                            <!-- Global search box - filters by all displayable fields -->
                             <span class="block mt-2 md:mt-0 p-input-icon-left">
                                 <i class="pi pi-search" />
                                 <InputText v-model="filters['global'].value" placeholder="Search..." />
@@ -274,78 +362,110 @@ const initFilters = () => {
                     <!-- Checkbox column - allows multi-select for batch operations -->
                     <Column selectionMode="multiple" headerStyle="width: 3rem"></Column>
 
-                    <!-- Column 1: ID - Auto-generated primary key from database -->
-                    <!-- field="id" maps to Test.id property -->
-                    <Column field="id" header="ID" :sortable="true" headerStyle="width:10%; min-width:5rem;">
+                    <!-- DYNAMIC COLUMNS - Generated from formConfig -->
+                    <!-- Each field with displayInTable=true becomes a table column -->
+                    <Column 
+                        v-for="field in getTableFields()" 
+                        :key="field.name"
+                        :field="field.name" 
+                        :header="field.label" 
+                        :sortable="field.sortable"
+                        :headerStyle="`width:${field.width}; min-width:8rem;`"
+                    >
                         <template #body="slotProps">
-                            <span class="p-column-title">ID</span>
-                            {{ slotProps.data.id }}
-                        </template>
-                    </Column>
-
-                    <!-- Column 2: TEXT - Maps to Test.text1 field from @Column(name = "text_1") -->
-                    <!-- field="text1" displays the text1 property from Test entity -->
-                    <Column field="text1" header="Text" :sortable="true" headerStyle="width:40%; min-width:10rem;">
-                        <template #body="slotProps">
-                            <span class="p-column-title">Text</span>
-                            {{ slotProps.data.text1 }}
-                        </template>
-                    </Column>
-
-                    <!-- Column 3: SIZE - Maps to Test.size field -->
-                    <!-- field="size" displays the size property (Integer) from Test entity -->
-                    <Column field="size" header="Size" :sortable="true" headerStyle="width:20%; min-width:8rem;">
-                        <template #body="slotProps">
-                            <span class="p-column-title">Size</span>
-                            {{ slotProps.data.size }}
+                            <span class="p-column-title">{{ field.label }}</span>
+                            {{ slotProps.data[field.name] }}
                         </template>
                     </Column>
 
                     <!-- Action Buttons Column -->
                     <Column headerStyle="min-width:10rem;">
                         <template #body="slotProps">
-                            <!-- Edit button - opens dialog to UPDATE test -->
+                            <!-- Edit button - opens dialog to UPDATE record -->
                             <Button icon="pi pi-pencil" class="p-button-rounded p-button-success mr-2" @click="editTest(slotProps.data)" />
-                            <!-- Delete button - opens confirmation dialog to DELETE test -->
+                            <!-- Delete button - opens confirmation dialog to DELETE record -->
                             <Button icon="pi pi-trash" class="p-button-rounded p-button-warning mt-2" @click="confirmDeleteTest(slotProps.data)" />
                         </template>
                     </Column>
                 </DataTable>
 
                 <!-- ========================================
-                     FORM DIALOG - Create or Edit a Test
+                     FORM DIALOG - Create or Edit a Record
                      ======================================== -->
                 <!-- v-model:visible="testDialog" - Controls when dialog appears/disappears -->
-                <Dialog v-model:visible="testDialog" :style="{ width: '450px' }" header="Test Details" :modal="true" class="p-fluid">
-                    <!-- INPUT FIELD 1: text1 -->
-                    <!-- v-model.trim="test.text1" - Binds form input to Test.text1 field -->
-                    <!-- This will be sent in HTTP POST/PUT as { "text1": "user input", ... } -->
-                    <div class="field">
-                        <label for="text1">Text</label>
-                        <InputText 
-                            id="text1" 
-                            v-model.trim="test.text1" 
-                            required="true" 
-                            autofocus 
-                            :class="{ 'p-invalid': submitted && !test.text1 }" 
-                        />
-                        <small class="p-invalid" v-if="submitted && !test.text1">Text is required.</small>
-                    </div>
+                <Dialog v-model:visible="testDialog" :style="{ width: '600px' }" header="Record Details" :modal="true" class="p-fluid">
+                    
+                    <!-- DYNAMIC FORM FIELDS - Generated from formConfig -->
+                    <!-- Each field with displayInForm=true becomes a form input -->
+                    <template v-for="field in getEditableFields()" :key="field.name">
+                        
+                        <!-- READ-ONLY FIELD (e.g., auto-generated ID) -->
+                        <div v-if="!field.editable" class="field">
+                            <label :for="field.name">{{ field.label }}</label>
+                            <InputText 
+                                :id="field.name"
+                                :modelValue="test[field.name]"
+                                disabled
+                            />
+                        </div>
 
-                    <!-- INPUT FIELD 2: size -->
-                    <!-- v-model="test.size" - Binds form input to Test.size field (Integer type) -->
-                    <!-- This will be sent in HTTP POST/PUT as { "size": 123, ... } -->
-                    <div class="field">
-                        <label for="size">Size</label>
-                        <InputNumber 
-                            id="size" 
-                            v-model="test.size" 
-                            integeronly 
-                            :class="{ 'p-invalid': submitted && test.size == null }" 
-                            required="true" 
-                        />
-                        <small class="p-invalid" v-if="submitted && test.size == null">Size is required.</small>
-                    </div>
+                        <!-- TEXT INPUT FIELD -->
+                        <div v-else-if="field.type === 'text'" class="field">
+                            <label :for="field.name">{{ field.label }}</label>
+                            <InputText 
+                                :id="field.name"
+                                v-model.trim="test[field.name]"
+                                autofocus
+                                :class="{ 'p-invalid': hasFieldError(field.name) }"
+                            />
+                            <small v-if="hasFieldError(field.name)" class="p-invalid">
+                                {{ field.label }} is required.
+                            </small>
+                        </div>
+
+                        <!-- NUMBER INPUT FIELD -->
+                        <div v-else-if="field.type === 'number'" class="field">
+                            <label :for="field.name">{{ field.label }}</label>
+                            <InputNumber 
+                                :id="field.name"
+                                v-model="test[field.name]"
+                                integeronly
+                                :class="{ 'p-invalid': hasFieldError(field.name) }"
+                            />
+                            <small v-if="hasFieldError(field.name)" class="p-invalid">
+                                {{ field.label }} is required.
+                            </small>
+                        </div>
+
+                        <!-- TEXTAREA FIELD -->
+                        <div v-else-if="field.type === 'textarea'" class="field">
+                            <label :for="field.name">{{ field.label }}</label>
+                            <Textarea 
+                                :id="field.name"
+                                v-model="test[field.name]"
+                                rows="3"
+                                cols="20"
+                                :class="{ 'p-invalid': hasFieldError(field.name) }"
+                            />
+                            <small v-if="hasFieldError(field.name)" class="p-invalid">
+                                {{ field.label }} is required.
+                            </small>
+                        </div>
+
+                        <!-- DATE INPUT FIELD -->
+                        <div v-else-if="field.type === 'date'" class="field">
+                            <label :for="field.name">{{ field.label }}</label>
+                            <Calendar 
+                                :id="field.name"
+                                v-model="test[field.name]"
+                                :class="{ 'p-invalid': hasFieldError(field.name) }"
+                            />
+                            <small v-if="hasFieldError(field.name)" class="p-invalid">
+                                {{ field.label }} is required.
+                            </small>
+                        </div>
+
+                    </template>
 
                     <!-- Dialog Footer -->
                     <template #footer>
@@ -362,7 +482,7 @@ const initFilters = () => {
                     <div class="flex align-items-center justify-content-center">
                         <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
                         <span v-if="test">
-                            Are you sure you want to delete <b>{{ test.text1 }}</b>?
+                            Are you sure you want to delete this record?
                         </span>
                     </div>
                     <template #footer>
@@ -378,7 +498,7 @@ const initFilters = () => {
                 <Dialog v-model:visible="deleteTestsDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
                     <div class="flex align-items-center justify-content-center">
                         <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
-                        <span>Are you sure you want to delete the selected tests?</span>
+                        <span>Are you sure you want to delete the selected records?</span>
                     </div>
                     <template #footer>
                         <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteTestsDialog = false" />
