@@ -1,23 +1,21 @@
+import axios from 'axios';
+
 export default class TestService {
     getTests() {
-        return fetch('/api/tests')
-            .then((res) => res.json())
+        return axios.get('/api/tests')
+            .then((res) => res.data)
             .then((data) => data || []);
     }
 
-    createTest(test) {
-        return fetch('/api/tests', {
-            method: 'POST',
+    saveTest(test) {
+        return axios.post('/api/tests', test, {
             headers: {
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(test)
-        }).then((res) => res.json());
+            }
+        }).then((res) => res.data);
     }
 
     deleteTest(id) {
-        return fetch(`/api/tests/${id}`, {
-            method: 'DELETE'
-        });
+        return axios.delete(`/api/tests/${id}`);
     }
 }

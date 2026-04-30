@@ -22,8 +22,8 @@ public class Test {
     @Column(name = "id", nullable = false)
     private Long id;
 
-    @Column(name = "text_1")
-    private String text1;
+    @Column(name = "description")
+    private String description;
 
     @Column(name = "size")
     @JdbcTypeCode(SqlTypes.INTEGER)

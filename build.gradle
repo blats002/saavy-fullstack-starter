@@ -1,0 +1,45 @@
+plugins {
+    id 'base'
+}
+
+tasks.register('clientServe') {
+    group = 'dev'
+    description = 'Run the Vue client dev server'
+    dependsOn ':client:serve'
+}
+
+tasks.register('serverBootRun') {
+    group = 'dev'
+    description = 'Run the Spring Boot server'
+    dependsOn ':server:bootRun'
+}
+
+tasks.register('postgresUp', Exec) {
+    group = 'dev'
+    description = 'Start the Postgres service from docker-compose'
+    commandLine 'docker', 'compose', 'up', '-d', 'postgres'
+}
+
+tasks.register('postgresUpWSL', Exec) {
+    group = 'dev'
+    description = 'Start the Postgres service from docker-compose'
+    commandLine 'wsl', 'docker', 'compose', 'up', '-d', 'postgres'
+}
+
+tasks.register('postgresDown', Exec) {
+    group = 'dev'
+    description = 'Stop the Postgres service from docker-compose'
+    commandLine 'docker', 'compose', 'stop', 'postgres'
+}
+
+tasks.register('postgresLogs', Exec) {
+    group = 'dev'
+    description = 'Follow Postgres logs from docker-compose'
+    commandLine 'docker', 'compose', 'logs', '-f', 'postgres'
+}
+
+//tasks.register('dev') {
+//    group = 'dev'
+//    description = 'Start Postgres, Spring Boot server'
+//    dependsOn 'postgresUp', 'serverBootRun'
+//}

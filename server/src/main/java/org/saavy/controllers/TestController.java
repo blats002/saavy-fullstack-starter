@@ -24,7 +24,7 @@ public class TestController {
     }
 
     @PostMapping
-    public Test createTest(@RequestBody Test test){
+    public Test save(@RequestBody Test test){
         return testService.save(test);
     }
 
