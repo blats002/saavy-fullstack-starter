@@ -2,6 +2,8 @@
 import { FilterMatchMode } from 'primevue/api';
 import { ref, onBeforeMount, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import GenericDialog from './GenericDialog.vue';
+import GenericPanel from './GenericPanel.vue';
 
 const props = defineProps({
     title: {
@@ -51,6 +53,53 @@ const recordDialog = ref(false);
 const deleteRecordDialog = ref(false);
 const deleteRecordsDialog = ref(false);
 
+const leftToolBarButtons = [
+    {
+        key: 'new',
+        label: 'New',
+        icon: 'pi pi-plus',
+        class: 'p-button-success mr-2'
+    },
+    {
+        key: 'delete-selected',
+        label: 'Delete',
+        icon: 'pi pi-trash',
+        class: 'p-button-danger'
+    }
+];
+
+const formDialogButtons = [
+    {
+        key: 'cancel',
+        label: 'Cancel',
+        icon: 'pi pi-times',
+        class: 'p-button-text',
+        closesDialog: true
+    },
+    {
+        key: 'save',
+        label: 'Save',
+        icon: 'pi pi-check',
+        class: 'p-button-text'
+    }
+];
+
+const confirmDialogButtons = [
+    {
+        key: 'cancel',
+        label: 'No',
+        icon: 'pi pi-times',
+        class: 'p-button-text',
+        closesDialog: true
+    },
+    {
+        key: 'confirm',
+        label: 'Yes',
+        icon: 'pi pi-check',
+        class: 'p-button-text'
+    }
+];
+
 onBeforeMount(() => {
     initFilters();
 });
@@ -75,11 +124,11 @@ const hideDialog = () => {
 };
 
 const getEditableFields = () => {
-  return props.fields.filter((field) => field.displayInForm);
+  return props.fields
 };
 
 const getTableFields = () => {
-    return props.fields.filter((field) => field.displayInTable);
+    return props.fields.filter((field) => !field.hidden);
 };
 
 const isEmptyValue = (value) => {
@@ -180,6 +229,30 @@ const confirmDeleteSelected = () => {
     deleteRecordsDialog.value = true;
 };
 
+const getLeftToolBarButtons = () => {
+    return leftToolBarButtons.map((button) => {
+        if (button.key === 'delete-selected') {
+            return {
+                ...button,
+                disabled: !selectedRecords.value || !selectedRecords.value.length
+            };
+        }
+
+        return button;
+    });
+};
+
+const handlePanelButtonClick = (button) => {
+    if (button.key === 'new') {
+        openNew();
+        return;
+    }
+
+    if (button.key === 'delete-selected') {
+        confirmDeleteSelected();
+    }
+};
+
 const deleteSelectedRecords = async () => {
     if (!selectedRecords.value?.length) {
         return;
@@ -201,6 +274,34 @@ const deleteSelectedRecords = async () => {
     });
 };
 
+const handleFormDialogButton = (button) => {
+    if (button.key === 'cancel') {
+        closeRecordDialog();
+        return;
+    }
+
+    if (button.key === 'save') {
+        saveRecord();
+    }
+};
+
+const handleDeleteRecordDialogButton = (button) => {
+    if (button.key === 'confirm') {
+        deleteRecord();
+    }
+};
+
+const handleDeleteRecordsDialogButton = (button) => {
+    if (button.key === 'confirm') {
+        deleteSelectedRecords();
+    }
+};
+
+const closeRecordDialog = () => {
+    recordDialog.value = false;
+    submitted.value = false;
+};
+
 const initFilters = () => {
     filters.value = {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
@@ -211,23 +312,13 @@ const initFilters = () => {
 <template>
     <div class="grid">
         <div class="col-12">
-            <div class="card">
+            <GenericPanel
+                :bodyType="panel"
+                :title="title"
+                :leftToolBarButtons="getLeftToolBarButtons()"
+                @button-click="handlePanelButtonClick"
+            >
                 <Toast />
-
-                <Toolbar class="mb-4">
-                    <template #start>
-                        <div class="my-2">
-                            <Button label="New" icon="pi pi-plus" class="p-button-success mr-2" @click="openNew" />
-                            <Button
-                                label="Delete"
-                                icon="pi pi-trash"
-                                class="p-button-danger"
-                                :disabled="!selectedRecords || !selectedRecords.length"
-                                @click="confirmDeleteSelected"
-                            />
-                        </div>
-                    </template>
-                </Toolbar>
 
                 <DataTable
                     :value="records"
@@ -242,9 +333,7 @@ const initFilters = () => {
                     responsiveLayout="scroll"
                 >
                     <template #header>
-                        <div class="flex flex-column md:flex-row md:justify-content-between md:align-items-center">
-                            <h5 class="m-0">{{ title }}</h5>
-
+                        <div class="flex flex-column md:flex-row md:justify-content-end md:align-items-center">
                             <span class="block mt-2 md:mt-0 p-input-icon-left">
                                 <i class="pi pi-search" />
                                 <InputText v-model="filters.global.value" placeholder="Search..." />
@@ -276,104 +365,38 @@ const initFilters = () => {
                     </Column>
                 </DataTable>
 
-                <Dialog v-model:visible="recordDialog" :style="{ width: '600px' }" :header="dialogHeader" :modal="true" class="p-fluid">
-                    <template v-for="field in getEditableFields()" :key="field.name">
-                        <input
-                            v-if="field.hiddenInForm"
-                            :id="field.name"
-                            v-model="record[field.name]"
-                            type="hidden"
-                        />
+                <GenericDialog
+                    v-model:visible="recordDialog"
+                    v-model:modelValue="record"
+                    type="form"
+                    width="600px"
+                    :header="dialogHeader"
+                    :fields="getEditableFields()"
+                    :submitted="submitted"
+                    :buttons="formDialogButtons"
+                    @button-click="handleFormDialogButton"
+                />
 
-                        <div v-else-if="!field.editable" class="field">
-                          <label :for="field.name">{{ field.label }}</label>
-                          <InputText :id="field.name" :modelValue="record[field.name]" disabled />
-                        </div>
+                <GenericDialog
+                    v-model:visible="deleteRecordDialog"
+                    type="confirm"
+                    header="Confirm"
+                    message="Are you sure you want to delete this record?"
+                    icon="pi pi-exclamation-triangle"
+                    :buttons="confirmDialogButtons"
+                    @button-click="handleDeleteRecordDialogButton"
+                />
 
-                        <div v-else-if="field.type === 'text'" class="field">
-                            <label :for="field.name">{{ field.label }}</label>
-                            <InputText
-                                :id="field.name"
-                                v-model.trim="record[field.name]"
-                                :class="{ 'p-invalid': hasFieldError(field.name) }"
-                            />
-                            <small v-if="hasFieldError(field.name)" class="p-invalid">
-                                {{ field.label }} is required.
-                            </small>
-                        </div>
-
-                        <div v-else-if="field.type === 'number'" class="field">
-                            <label :for="field.name">{{ field.label }}</label>
-                            <InputNumber
-                                :id="field.name"
-                                v-model="record[field.name]"
-                                integeronly
-                                :class="{ 'p-invalid': hasFieldError(field.name) }"
-                            />
-                            <small v-if="hasFieldError(field.name)" class="p-invalid">
-                                {{ field.label }} is required.
-                            </small>
-                        </div>
-
-                        <div v-else-if="field.type === 'textarea'" class="field">
-                            <label :for="field.name">{{ field.label }}</label>
-                            <Textarea
-                                :id="field.name"
-                                v-model="record[field.name]"
-                                rows="3"
-                                cols="20"
-                                :class="{ 'p-invalid': hasFieldError(field.name) }"
-                            />
-                            <small v-if="hasFieldError(field.name)" class="p-invalid">
-                                {{ field.label }} is required.
-                            </small>
-                        </div>
-
-                        <div v-else-if="field.type === 'date'" class="field">
-                            <label :for="field.name">{{ field.label }}</label>
-                            <Calendar
-                                :id="field.name"
-                                v-model="record[field.name]"
-                                :class="{ 'p-invalid': hasFieldError(field.name) }"
-                            />
-                            <small v-if="hasFieldError(field.name)" class="p-invalid">
-                                {{ field.label }} is required.
-                            </small>
-                        </div>
-                    </template>
-
-                    <template #footer>
-                        <Button label="Cancel" icon="pi pi-times" class="p-button-text" @click="hideDialog" />
-                        <Button label="Save" icon="pi pi-check" class="p-button-text" @click="saveRecord" />
-                    </template>
-                </Dialog>
-
-                <Dialog v-model:visible="deleteRecordDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
-                    <div class="flex align-items-center justify-content-center">
-                        <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
-                        <span>Are you sure you want to delete this record?</span>
-                    </div>
-
-                    <template #footer>
-                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteRecordDialog = false" />
-                        <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteRecord" />
-                    </template>
-                </Dialog>
-
-                <Dialog v-model:visible="deleteRecordsDialog" :style="{ width: '450px' }" header="Confirm" :modal="true">
-                    <div class="flex align-items-center justify-content-center">
-                        <i class="pi pi-exclamation-triangle mr-3" style="font-size: 2rem" />
-                        <span>Are you sure you want to delete the selected records?</span>
-                    </div>
-
-                    <template #footer>
-                        <Button label="No" icon="pi pi-times" class="p-button-text" @click="deleteRecordsDialog = false" />
-                        <Button label="Yes" icon="pi pi-check" class="p-button-text" @click="deleteSelectedRecords" />
-                    </template>
-                </Dialog>
-            </div>
+                <GenericDialog
+                    v-model:visible="deleteRecordsDialog"
+                    type="confirm"
+                    header="Confirm"
+                    message="Are you sure you want to delete the selected records?"
+                    icon="pi pi-exclamation-triangle"
+                    :buttons="confirmDialogButtons"
+                    @button-click="handleDeleteRecordsDialogButton"
+                />
+            </GenericPanel>
         </div>
     </div>
 </template>
-
-<style scoped lang="scss"></style>

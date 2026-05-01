@@ -1,5 +1,7 @@
 <script setup>
 import GenericCrud from '@/components/GenericCrud.vue';
+import GenericPanel from '@/components/GenericPanel.vue';
+import TabPanel from 'primevue/tabpanel';
 import TestService from '@/service/TestService';
 
 const testService = new TestService();
@@ -16,9 +18,7 @@ const testFields = [
     label: 'ID',
     type: 'text',
     sortable: true,
-    displayInTable: true,
-    displayInForm: true,
-    hiddenInForm: true,
+    hidden: true,
     editable: false,
     required: false,
     width: '10%'
@@ -28,9 +28,7 @@ const testFields = [
     label: 'Description',
     type: 'text',
     sortable: true,
-    displayInTable: true,
-    displayInForm: true,
-    hiddenInForm: false,
+    hidden: false,
     editable: true,
     required: true,
     width: '40%'
@@ -41,8 +39,7 @@ const testFields = [
     type: 'number',
     sortable: true,
     displayInTable: true,
-    displayInForm: true,
-    hiddenInForm: false,
+    hidden: false,
     editable: true,
     required: true,
     width: '20%'
@@ -56,18 +53,21 @@ const createEmptyTest = () => ({
 </script>
 
 <template>
-  <GenericCrud
-      title="Manage Tests"
-      dialogHeader="Test Details"
-      dataKey="id"
-      :fields="testFields"
-      :service="testCrudService"
-      :createEmptyRecord="createEmptyTest"
-      :messages="{
-            created: 'Test Created',
-            updated: 'Test Updated',
-            deleted: 'Test Deleted',
-            deletedMany: 'Tests Deleted'
-        }"
-  />
+    <GenericPanel title="Manage" bodyType="tabview" :showToolbar="false">
+      <TabPanel header="Test">
+        <GenericCrud
+            dialogHeader="Test Details"
+            dataKey="id"
+            :fields="testFields"
+            :service="testCrudService"
+            :createEmptyRecord="createEmptyTest"
+            :messages="{
+                created: 'Test Created',
+                updated: 'Test Updated',
+                deleted: 'Test Deleted',
+                deletedMany: 'Tests Deleted'
+            }"
+        />
+      </TabPanel>
+    </GenericPanel>
 </template>

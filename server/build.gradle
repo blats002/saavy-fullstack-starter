@@ -62,6 +62,12 @@ tasks.register('copyFrontend', Copy) {
     into('src/main/resources/static')
 }
 
+tasks.register('frontendHotDeploy', Copy) {
+    dependsOn ':client:audit', ':client:build', cleanFrontEnd
+    from('../client/dist')
+    into('build/resources/main/static')
+}
+
 processResources{
     dependsOn copyFrontend
 }
