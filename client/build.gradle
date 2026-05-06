@@ -26,11 +26,6 @@ tasks.register('build', NpmTask) {
     args = ['run', 'build']
 }
 
-tasks.register('buildFrontend', Exec) {
-    dependsOn ':client:build'
-    environment "VITE_SERVER_URL", System.getenv("VITE_SERVER_URL")
-}
-
 tasks.register('lint', NpmTask) {
     group = 'build'
     description = 'Run eslint'

@@ -53,21 +53,17 @@ const createEmptyTest = () => ({
 </script>
 
 <template>
-    <GenericPanel title="Manage" bodyType="tabview" :showToolbar="false">
-      <TabPanel header="Test">
-        <GenericCrud
-            dialogHeader="Test Details"
-            dataKey="id"
-            :fields="testFields"
-            :service="testCrudService"
-            :createEmptyRecord="createEmptyTest"
-            :messages="{
+  <GenericCrud
+      dialogHeader="Test Details"
+      dataKey="id"
+      :fields="testFields"
+      :service="testCrudService"
+      :createEmptyRecord="createEmptyTest"
+      :messages="{
                 created: 'Test Created',
                 updated: 'Test Updated',
                 deleted: 'Test Deleted',
                 deletedMany: 'Tests Deleted'
             }"
-        />
-      </TabPanel>
-    </GenericPanel>
+  />
 </template>
