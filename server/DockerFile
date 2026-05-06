@@ -1,9 +1,6 @@
 FROM eclipse-temurin:21-jdk-jammy AS build
 WORKDIR /app
 COPY . .
-COPY ./client/.env.production /app/client/.env
-# Set VITE_SERVER_URL to new value
-ENV VITE_SERVER_URL ${VITE_SERVER_URL}
 RUN chmod +x ./server/gradlew && ./server/gradlew bootJar --no-daemon
 
 FROM eclipse-temurin:21-jre-jammy
